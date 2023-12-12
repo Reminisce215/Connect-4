@@ -4,30 +4,34 @@ import pygame
 import sys
 import math
 
+PLAYER = 0
+AI = 1
+
+#RGB color scale
 BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
-WHITE= (255,255,255)
+
 
 ROW_COUNT = 6
 COLUMN_COUNT = 7
 
-PLAYER = 0
-AI = 1
+
 
 EMPTY = 0
 PLAYER_PIECE = 1
 AI_PIECE = 2
 
+#checks win condition
 WINDOW_LENGTH = 4
 
-
+#creates 6x7 dimension board
 def create_board():
     board = np.zeros((ROW_COUNT, COLUMN_COUNT))
     return board
 
-
+#Drops a piece in the board at the specified row and column
 def drop_piece(board, row, col, piece):
     board[row][col] = piece
 
@@ -222,29 +226,73 @@ def draw_board(board):
                 int(c * SQUARESIZE + SQUARESIZE / 2), height - int(r * SQUARESIZE + SQUARESIZE / 2)), RADIUS)
     pygame.display.update()
 
+score_player = 0
+score_ai = 0
 
-board = create_board()
-print_board(board)
-game_over = False
 
+# Menu function for selecting difficulty
+def draw_menu(screen):
+    myfont = pygame.font.SysFont("monospace", 75)
+    easy_button = myfont.render("Easy", 1, RED)
+    medium_button = myfont.render("Medium", 1, YELLOW)
+    hard_button = myfont.render("Hard", 1, BLUE)
+
+    screen.fill(BLACK)
+    screen.blit(easy_button, (100, 150))
+    screen.blit(medium_button, (100, 300))
+    screen.blit(hard_button, (100, 450))
+    pygame.display.update()
+
+    def show_end_screen(winner):
+        screen.fill(BLACK)
+        if winner == PLAYER:
+            end_text = f"Player wins! Score: {score_player}-{score_ai}"
+        else:
+            end_text = f"AI wins! Score: {score_player}-{score_ai}"
+        end_label = myfont.render(end_text, 1, RED)
+        restart_label = myfont.render("Restart", 1, YELLOW)
+        quit_label = myfont.render("Quit", 1, BLUE)
+
+        screen.blit(end_label, (40, 10))
+        screen.blit(restart_label, (40, 100))
+        screen.blit(quit_label, (40, 190))
+        pygame.display.update()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if 100 <= x <= 400:  # Assuming button width is 300
+                    if 150 <= y <= 225:  # Easy button
+                        return 1
+                    elif 300 <= y <= 375:  # Medium button
+                        return 3
+                    elif 450 <= y <= 525:  # Hard button
+                        return 5
+
+# Initialize Pygame and set up the screen
 pygame.init()
-
 SQUARESIZE = 100
-
 width = COLUMN_COUNT * SQUARESIZE
 height = (ROW_COUNT + 1) * SQUARESIZE
-
 size = (width, height)
-
-RADIUS = int(SQUARESIZE / 2 - 5)
-
 screen = pygame.display.set_mode(size)
+
+# Display the menu and get the selected difficulty
+difficulty = draw_menu(screen)
+
+# Set up the game board and other initial configurations
+board = create_board()
+game_over = False
+RADIUS = int(SQUARESIZE / 2 - 5)
 draw_board(board)
 pygame.display.update()
-
 myfont = pygame.font.SysFont("monospace", 75)
-
 turn = random.randint(PLAYER, AI)
+
 
 while not game_over:
 
@@ -283,12 +331,12 @@ while not game_over:
                     print_board(board)
                     draw_board(board)
 
-    # # Ask for Player 2 Input
+
     if turn == AI and not game_over:
 
-        # col = random.randint(0, COLUMN_COUNT-1)
-        # col = pick_best_move(board, AI_PIECE)
-        col, minimax_score = minimax(board, 5, -math.inf, math.inf, True)
+
+        #Adjust difficulty
+        col, minimax_score = minimax(board, difficulty, -math.inf, math.inf, True)
 
         if is_valid_location(board, col):
             # pygame.time.wait(500)
@@ -296,7 +344,7 @@ while not game_over:
             drop_piece(board, row, col, AI_PIECE)
 
             if winning_move(board, AI_PIECE):
-                label = myfont.render("Player 2 wins!!", 1, YELLOW)
+                label = myfont.render("AI wins!!", 1, YELLOW)
                 screen.blit(label, (40, 10))
                 game_over = True
 
